@@ -32,28 +32,33 @@ public class ProductTests
             .Options;
     }
 
+    private async Task ClearDatabase(ApplicationDbContext context)
+    {
+        context.Products.RemoveRange(context.Products);
+        context.Categories.RemoveRange(context.Categories);
+        await context.SaveChangesAsync();
+    }
+
     [Fact]
     public async Task GetAllProductsAsync_ShouldReturnAllProducts()
     {
         // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
-        // Clear existing data
-        context.Products.RemoveRange(context.Products);
-        context.Categories.RemoveRange(context.Categories);
+        await ClearDatabase(context);
+
+        var category = new Category { Name = "Test Category", Description = "Test Description" };
+        await context.Categories.AddAsync(category);
         await context.SaveChangesAsync();
 
-        var category = new Category { Id = 0, Name = "Test Category", Description = "Test Description" };
         var product = new Product
         {
-            Id = 0,
             Name = "Test Product",
             Description = "Test Description",
             Price = 9.99m,
             Quantity = 10,
-            Category = category
+            CategoryId = category.Id
         };
-        context.Categories.Add(category);
-        context.Products.Add(product);
+        await context.Products.AddAsync(product);
         await context.SaveChangesAsync();
 
         var service = new ProductService(context, _mapper);
@@ -65,7 +70,8 @@ public class ProductTests
         Assert.Single(result);
         Assert.Equal("Test Product", result[0].Name);
         Assert.Equal("Test Category", result[0].CategoryName);
-        Assert.Equal(1, result[0].Id); // External ID should be 1
+        Assert.Equal(product.Id + 1, result[0].Id); // External ID should be internal ID + 1
+        Assert.Equal(category.Id + 1, result[0].CategoryId); // External CategoryId should be internal ID + 1
     }
 
     [Fact]
@@ -73,35 +79,34 @@ public class ProductTests
     {
         // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
-        // Clear existing data
-        context.Products.RemoveRange(context.Products);
-        context.Categories.RemoveRange(context.Categories);
+        await ClearDatabase(context);
+
+        var category = new Category { Name = "Test Category" };
+        await context.Categories.AddAsync(category);
         await context.SaveChangesAsync();
 
-        var category = new Category { Id = 0, Name = "Test Category" };
         var product = new Product
         {
-            Id = 0,
             Name = "Test Product",
             Description = "Test Description",
             Price = 9.99m,
             Quantity = 10,
-            Category = category
+            CategoryId = category.Id
         };
-        context.Categories.Add(category);
-        context.Products.Add(product);
+        await context.Products.AddAsync(product);
         await context.SaveChangesAsync();
 
         var service = new ProductService(context, _mapper);
 
         // Act
-        var result = await service.GetProductByIdAsync(1); // External ID 1 maps to internal ID 0
+        var result = await service.GetProductByIdAsync(product.Id + 1); // External ID is internal ID + 1
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal("Test Product", result.Name);
         Assert.Equal(9.99m, result.Price);
-        Assert.Equal(1, result.Id); // External ID should be 1
+        Assert.Equal(product.Id + 1, result.Id);
+        Assert.Equal(category.Id + 1, result.CategoryId);
     }
 
     [Fact]
@@ -120,13 +125,10 @@ public class ProductTests
     {
         // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
-        // Clear existing data
-        context.Products.RemoveRange(context.Products);
-        context.Categories.RemoveRange(context.Categories);
-        await context.SaveChangesAsync();
+        await ClearDatabase(context);
 
-        var category = new Category { Id = 0, Name = "Test Category" };
-        context.Categories.Add(category);
+        var category = new Category { Name = "Test Category" };
+        await context.Categories.AddAsync(category);
         await context.SaveChangesAsync();
 
         var service = new ProductService(context, _mapper);
@@ -136,7 +138,7 @@ public class ProductTests
             Description = "New Description",
             Price = 19.99m,
             Quantity = 5,
-            CategoryId = 1 // External ID 1 maps to internal ID 0
+            CategoryId = category.Id + 1 // External ID is internal ID + 1
         };
 
         // Act
@@ -147,7 +149,12 @@ public class ProductTests
         Assert.Equal("New Product", result.Name);
         Assert.Equal(19.99m, result.Price);
         Assert.Equal(5, result.Quantity);
-        Assert.Equal(1, result.Id); // External ID should be 1
+        Assert.Equal(category.Id + 1, result.CategoryId);
+
+        // Verify in database
+        var dbProduct = await context.Products.Include(p => p.Category).FirstAsync();
+        Assert.Equal("New Product", dbProduct.Name);
+        Assert.Equal(category.Id, dbProduct.CategoryId);
     }
 
     [Fact]
@@ -155,23 +162,21 @@ public class ProductTests
     {
         // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
-        // Clear existing data
-        context.Products.RemoveRange(context.Products);
-        context.Categories.RemoveRange(context.Categories);
+        await ClearDatabase(context);
+
+        var category = new Category { Name = "Test Category" };
+        await context.Categories.AddAsync(category);
         await context.SaveChangesAsync();
 
-        var category = new Category { Id = 0, Name = "Test Category" };
         var product = new Product
         {
-            Id = 0,
             Name = "Original Name",
             Description = "Original Description",
             Price = 9.99m,
             Quantity = 10,
-            Category = category
+            CategoryId = category.Id
         };
-        context.Categories.Add(category);
-        context.Products.Add(product);
+        await context.Products.AddAsync(product);
         await context.SaveChangesAsync();
 
         var service = new ProductService(context, _mapper);
@@ -181,18 +186,24 @@ public class ProductTests
             Description = "Updated Description",
             Price = 29.99m,
             Quantity = 15,
-            CategoryId = 1 // External ID 1 maps to internal ID 0
+            CategoryId = category.Id + 1 // External ID is internal ID + 1
         };
 
         // Act
-        var result = await service.UpdateProductAsync(1, updateDto); // External ID 1 maps to internal ID 0
+        var result = await service.UpdateProductAsync(product.Id + 1, updateDto); // External ID is internal ID + 1
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal("Updated Name", result.Name);
         Assert.Equal(29.99m, result.Price);
         Assert.Equal(15, result.Quantity);
-        Assert.Equal(1, result.Id); // External ID should be 1
+        Assert.Equal(product.Id + 1, result.Id);
+        Assert.Equal(category.Id + 1, result.CategoryId);
+
+        // Verify in database
+        var dbProduct = await context.Products.Include(p => p.Category).FirstAsync();
+        Assert.Equal("Updated Name", dbProduct.Name);
+        Assert.Equal(category.Id, dbProduct.CategoryId);
     }
 
     [Fact]
@@ -200,29 +211,27 @@ public class ProductTests
     {
         // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
-        // Clear existing data
-        context.Products.RemoveRange(context.Products);
-        context.Categories.RemoveRange(context.Categories);
+        await ClearDatabase(context);
+
+        var category = new Category { Name = "Test Category" };
+        await context.Categories.AddAsync(category);
         await context.SaveChangesAsync();
 
-        var category = new Category { Id = 0, Name = "Test Category" };
         var product = new Product
         {
-            Id = 0,
             Name = "Test Product",
             Description = "Test Description",
             Price = 9.99m,
             Quantity = 10,
-            Category = category
+            CategoryId = category.Id
         };
-        context.Categories.Add(category);
-        context.Products.Add(product);
+        await context.Products.AddAsync(product);
         await context.SaveChangesAsync();
 
         var service = new ProductService(context, _mapper);
 
         // Act
-        var result = await service.DeleteProductAsync(1); // External ID 1 maps to internal ID 0
+        var result = await service.DeleteProductAsync(product.Id + 1); // External ID is internal ID + 1
 
         // Assert
         Assert.True(result);

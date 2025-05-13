@@ -24,15 +24,7 @@ public class CategoryService : ICategoryService
             .Include(c => c.Products)
             .ToListAsync();
         
-        var dtos = categories.Select(category =>
-        {
-            var dto = _mapper.Map<CategoryDto>(category);
-            dto.Id += 1; // Adjust ID for external representation
-            dto.Quantity = category.Products.Sum(p => p.Quantity);
-            return dto;
-        }).ToList();
-        
-        return dtos;
+        return _mapper.Map<List<CategoryDto>>(categories);
     }
 
     public async Task<CategoryDto?> GetCategoryByIdAsync(int id)
@@ -43,12 +35,7 @@ public class CategoryService : ICategoryService
             .Include(c => c.Products)
             .FirstOrDefaultAsync(c => c.Id == dbId);
         
-        if (category == null) return null;
-        
-        // Adjust ID back for external representation (add 1)
-        var dto = _mapper.Map<CategoryDto>(category);
-        dto.Id += 1;
-        return dto;
+        return category == null ? null : _mapper.Map<CategoryDto>(category);
     }
 
     public async Task<CategoryDto> CreateCategoryAsync(CreateCategoryDto categoryDto)
@@ -62,10 +49,7 @@ public class CategoryService : ICategoryService
         _context.Categories.Add(category);
         await _context.SaveChangesAsync();
         
-        // Adjust ID for external representation (add 1)
-        var dto = _mapper.Map<CategoryDto>(category);
-        dto.Id += 1;
-        return dto;
+        return _mapper.Map<CategoryDto>(category);
     }
 
     public async Task<CategoryDto?> UpdateCategoryAsync(int id, UpdateCategoryDto categoryDto)
@@ -80,10 +64,7 @@ public class CategoryService : ICategoryService
 
         await _context.SaveChangesAsync();
         
-        // Adjust ID for external representation (add 1)
-        var dto = _mapper.Map<CategoryDto>(category);
-        dto.Id += 1;
-        return dto;
+        return _mapper.Map<CategoryDto>(category);
     }
 
     public async Task<bool> DeleteCategoryAsync(int id)

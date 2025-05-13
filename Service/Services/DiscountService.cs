@@ -1,6 +1,8 @@
+using AutoMapper;
 using Service.DTOs;
 using Service.Interfaces;
 using Data.Context;
+using Data.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Service.Services;
@@ -8,15 +10,19 @@ namespace Service.Services;
 public class DiscountService : IDiscountService
 {
     private readonly ApplicationDbContext _context;
+    private readonly IMapper _mapper;
 
-    public DiscountService(ApplicationDbContext context)
+    public DiscountService(ApplicationDbContext context, IMapper mapper)
     {
         _context = context;
+        _mapper = mapper;
     }
 
-    public async Task<BasketDiscountResponse> CalculateDiscountAsync(List<BasketItemDto> basketItems)
+    public async Task<BasketDiscountResponse> CalculateBasketDiscount(List<BasketItemDto> basketItems)
     {
-        // Validate stock levels first
+        decimal totalBeforeDiscount = 0;
+
+        // Validate and load products
         foreach (var item in basketItems)
         {
             // Adjust ID for database query (subtract 1 from external ID)
@@ -30,44 +36,33 @@ public class DiscountService : IDiscountService
             
             if (product.Quantity < item.Quantity)
                 throw new InvalidOperationException($"Not enough stock for product '{product.Name}'. Available: {product.Quantity}, Requested: {item.Quantity}");
+
+            totalBeforeDiscount += product.Price * item.Quantity;
         }
 
-        decimal originalTotal = basketItems.Sum(item => item.Price * item.Quantity);
-        decimal discountedTotal = originalTotal;
-        decimal totalDiscount = 0;
-        var appliedDiscounts = new List<string>();
-
-        // Group items by category
-        var productCategories = await GetProductCategories(basketItems.Select(i => i.ProductId).ToList());
-        var itemsByCategory = basketItems
-            .Where(item => productCategories.ContainsKey(item.ProductId))
-            .GroupBy(item => productCategories[item.ProductId]);
-
-        // Apply category-based discounts
-        foreach (var categoryGroup in itemsByCategory)
-        {
-            if (categoryGroup.Count() > 1)
-            {
-                // Apply 5% discount to the first item in each category
-                var firstItem = categoryGroup.OrderBy(item => item.Price).First();
-                decimal categoryDiscount = firstItem.Price * firstItem.Quantity * 0.05m;
-                totalDiscount += categoryDiscount;
-                appliedDiscounts.Add($"5% off first {categoryGroup.Key}");
-            }
-        }
-
-        // Calculate final discounted total
-        discountedTotal = originalTotal - totalDiscount;
-        string discountDescription = appliedDiscounts.Any() 
-            ? string.Join(", ", appliedDiscounts) 
-            : "No discount applied";
+        // Apply 10% discount on total
+        decimal discountAmount = totalBeforeDiscount * 0.10m;
+        decimal totalAfterDiscount = totalBeforeDiscount - discountAmount;
 
         return new BasketDiscountResponse
         {
-            OriginalTotal = originalTotal,
-            DiscountedTotal = discountedTotal,
-            DiscountAmount = totalDiscount,
-            DiscountDescription = discountDescription
+            TotalBeforeDiscount = totalBeforeDiscount,
+            TotalAfterDiscount = totalAfterDiscount,
+            DiscountAmount = discountAmount,
+            DiscountApplied = true
+        };
+    }
+
+    // Legacy method to maintain backward compatibility
+    public async Task<BasketDiscountResponse> CalculateDiscountAsync(List<BasketItemDto> basketItems)
+    {
+        var result = await CalculateBasketDiscount(basketItems);
+        return new BasketDiscountResponse
+        {
+            OriginalTotal = result.TotalBeforeDiscount,
+            DiscountedTotal = result.TotalAfterDiscount,
+            DiscountAmount = result.DiscountAmount,
+            DiscountDescription = result.DiscountApplied ? "10% discount applied" : "No discount applied"
         };
     }
 
