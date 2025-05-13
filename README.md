@@ -1,43 +1,50 @@
+
 # Computer Store Web Application
 
-A proof of concept web application for a computer store using .NET 8.0, implementing clean architecture principles.
+This project is a proof-of-concept web application for managing a computer store. It is built with .NET 8.0 and follows clean architecture principles. The application includes full support for managing product and category data, importing stock, and applying basic discount logic during purchases.
 
 ## Technology Stack
-- MSSQL Server
-- Entity Framework Core
+
 - ASP.NET Core Web API
-- Clean (Layered) Architecture
+- Entity Framework Core
+- SQL Server
 - AutoMapper
-- xUnit for Testing
+- xUnit for testing
+- Clean (Layered) Architecture
 
 ## Project Structure
-- **WebApi** - API Controllers and entry point
-- **Service** - Business logic and DTOs
-- **Data** - Entity Framework context and entities
-- **Tests** - Unit tests and integration tests
+
+- `WebApi` - Contains API controllers and the application entry point
+- `Service` - Business logic, validation, and DTOs
+- `Data` - Entity Framework Core context and entity models
+- `Tests` - Unit and integration tests
 
 ## Features
 
 ### 1. Category Management
-- CRUD operations for categories
+
+- Create, read, update, and delete categories
 - Validation:
   - Name is required (max 100 characters)
   - Description is optional (max 500 characters)
-- Error handling with friendly messages
+- Handles errors with user-friendly messages
 
 ### 2. Product Management
-- CRUD operations for products
+
+- Create, read, update, and delete products
 - Validation:
   - Name is required (max 100 characters)
   - Description is optional (max 500 characters)
   - Price must be between 0.01 and 99,999.99
   - Category is required
-- Error handling with friendly messages
+- Includes proper error handling
 
 ### 3. Stock Import
-- Import product stock information from JSON
-- Auto-creates missing categories and products
-- Format:
+
+- Import stock data from a JSON file
+- Automatically creates missing categories and products
+- Example format:
+
 ```json
 [
   {
@@ -50,13 +57,13 @@ A proof of concept web application for a computer store using .NET 8.0, implemen
 ```
 
 ### 4. Discount Calculation
-Rules:
-1. Single product purchases: no discount
-2. Multiple products in same category: 5% discount
-3. Discount applies only to the first product in each category
-4. Stock validation with meaningful errors
 
-Example:
+- No discount for single-product purchases
+- 5% discount on the first product in a category if multiple items are purchased from the same category
+- Stock validation with meaningful error messages
+
+Example input:
+
 ```json
 [
   {
@@ -73,44 +80,62 @@ Example:
   }
 ]
 ```
-Response includes original total, discount amount, and final total.
+
+The response includes:
+- Original total
+- Discount amount
+- Final total
 
 ## API Endpoints
 
 ### Categories
-- GET `/api/Categories` - List all categories
-- GET `/api/Categories/{id}` - Get category by ID
-- POST `/api/Categories` - Create new category
-- PUT `/api/Categories/{id}` - Update category
-- DELETE `/api/Categories/{id}` - Delete category
+
+- `GET /api/Categories` - Get all categories
+- `GET /api/Categories/{id}` - Get a category by ID
+- `POST /api/Categories` - Create a new category
+- `PUT /api/Categories/{id}` - Update a category
+- `DELETE /api/Categories/{id}` - Delete a category
 
 ### Products
-- GET `/api/Products` - List all products
-- GET `/api/Products/{id}` - Get product by ID
-- POST `/api/Products` - Create new product
-- PUT `/api/Products/{id}` - Update product
-- DELETE `/api/Products/{id}` - Delete product
+
+- `GET /api/Products` - Get all products
+- `GET /api/Products/{id}` - Get a product by ID
+- `POST /api/Products` - Create a new product
+- `PUT /api/Products/{id}` - Update a product
+- `DELETE /api/Products/{id}` - Delete a product
 
 ### Stock
-- GET `/api/Stock` - Get current stock levels
-- POST `/api/Stock/import` - Import stock information
+
+- `GET /api/Stock` - Get current stock levels
+- `POST /api/Stock/import` - Import stock data from JSON
 
 ### Discount
-- POST `/api/Discount/calculate` - Calculate basket discount
+
+- `POST /api/Discount/calculate` - Calculate discount for a product basket
 
 ## Database Setup
-1. Ensure SQL Server is running
-2. Update connection string in appsettings.json if needed
-3. Database will be automatically created on first run
+
+- Ensure SQL Server is running
+- Update the connection string in `appsettings.json` if necessary
+- The database is created automatically on first run
 
 ## Running Tests
-```bash
+
+To run all tests, use:
+
+```
 dotnet test
 ```
 
 ## Error Handling
-All endpoints include proper error handling with meaningful messages for:
+
+All endpoints return appropriate error messages for:
+
 - Invalid input data
-- Not found resources
-- Stock availability issues
-- Database constraints 
+- Missing or non-existent resources
+- Insufficient stock
+- Database constraint violations
+
+---
+
+**Jovan Tone 5618**

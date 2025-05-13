@@ -6,24 +6,20 @@ namespace Service.DTOs;
 
 public class BasketItemDto
 {
-    /// <example>1</example>
     [JsonPropertyName("productId")]
     [Range(1, int.MaxValue, ErrorMessage = "Product ID must be greater than 0")]
     [DefaultValue(1)]
     public int ProductId { get; set; }
 
-    /// <example>Laptop</example>
     [JsonPropertyName("productName")]
     [DefaultValue("Laptop")]
     public string ProductName { get; set; } = string.Empty;
 
-    /// <example>999.99</example>
     [JsonPropertyName("price")]
     [Range(0.01, double.MaxValue, ErrorMessage = "Price must be greater than 0")]
     [DefaultValue(999.99)]
     public decimal Price { get; set; }
 
-    /// <example>2</example>
     [JsonPropertyName("quantity")]
     [Range(1, int.MaxValue, ErrorMessage = "Quantity must be greater than 0")]
     [DefaultValue(2)]

@@ -45,7 +45,6 @@ public class StockService : IStockService
         {
             try
             {
-                // Find or create categories
                 var categories = new List<Category>();
                 foreach (var categoryName in item.Categories)
                 {
@@ -66,14 +65,12 @@ public class StockService : IStockService
                     categories.Add(category);
                 }
 
-                // Find or create product
                 var product = await _context.Products
                     .Include(p => p.Category)
                     .FirstOrDefaultAsync(p => p.Name.ToLower() == item.Name.ToLower());
 
                 if (product == null)
                 {
-                    // Create new product with the first category
                     product = new Product
                     {
                         Name = item.Name,
@@ -87,7 +84,6 @@ public class StockService : IStockService
                 }
                 else
                 {
-                    // Update existing product
                     product.Price = item.Price;
                     product.Quantity = item.Quantity;
                     product.CategoryId = categories.First().Id;
@@ -99,7 +95,7 @@ public class StockService : IStockService
             }
             catch (Exception)
             {
-                throw; // Re-throw to be handled by controller
+                throw;
             }
         }
 
