@@ -21,7 +21,7 @@ public class CategoryTests
             mc.AddProfile(new MappingProfile());
         });
         _mapper = mappingConfig.CreateMapper();
-        _dbName = $"TestDb_Categories_{Guid.NewGuid()}"; // Unique database for each test run
+        _dbName = $"TestDb_Categories_{Guid.NewGuid()}";
     }
 
     private DbContextOptions<ApplicationDbContext> GetDbContextOptions()

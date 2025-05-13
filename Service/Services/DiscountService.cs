@@ -22,10 +22,8 @@ public class DiscountService : IDiscountService
     {
         decimal totalBeforeDiscount = 0;
 
-        // Validate and load products
         foreach (var item in basketItems)
         {
-            // Adjust ID for database query (subtract 1 from external ID)
             var dbProductId = item.ProductId - 1;
             var product = await _context.Products
                 .Include(p => p.Category)
@@ -40,7 +38,6 @@ public class DiscountService : IDiscountService
             totalBeforeDiscount += product.Price * item.Quantity;
         }
 
-        // Apply 10% discount on total
         decimal discountAmount = totalBeforeDiscount * 0.10m;
         decimal totalAfterDiscount = totalBeforeDiscount - discountAmount;
 
@@ -53,7 +50,6 @@ public class DiscountService : IDiscountService
         };
     }
 
-    // Legacy method to maintain backward compatibility
     public async Task<BasketDiscountResponse> CalculateDiscountAsync(List<BasketItemDto> basketItems)
     {
         var result = await CalculateBasketDiscount(basketItems);
@@ -68,13 +64,12 @@ public class DiscountService : IDiscountService
 
     private async Task<Dictionary<int, string>> GetProductCategories(List<int> productIds)
     {
-        // Adjust IDs for database query (subtract 1 from external IDs)
         var dbProductIds = productIds.Select(id => id - 1).ToList();
         var products = await _context.Products
             .Include(p => p.Category)
             .Where(p => dbProductIds.Contains(p.Id))
             .ToDictionaryAsync(
-                p => p.Id + 1, // Adjust ID back for external representation (add 1)
+                p => p.Id + 1,
                 p => p.Category.Name
             );
         return products;

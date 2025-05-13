@@ -29,7 +29,6 @@ public class CategoryService : ICategoryService
 
     public async Task<CategoryDto?> GetCategoryByIdAsync(int id)
     {
-        // Adjust ID to match database (subtract 1 since external IDs start from 1)
         var dbId = id - 1;
         var category = await _context.Categories
             .Include(c => c.Products)
@@ -54,7 +53,6 @@ public class CategoryService : ICategoryService
 
     public async Task<CategoryDto?> UpdateCategoryAsync(int id, UpdateCategoryDto categoryDto)
     {
-        // Adjust ID to match database (subtract 1)
         var dbId = id - 1;
         var category = await _context.Categories.FindAsync(dbId);
         if (category == null) return null;
@@ -69,7 +67,6 @@ public class CategoryService : ICategoryService
 
     public async Task<bool> DeleteCategoryAsync(int id)
     {
-        // Adjust ID to match database (subtract 1)
         var dbId = id - 1;
         var category = await _context.Categories
             .Include(c => c.Products)

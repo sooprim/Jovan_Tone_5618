@@ -6,8 +6,6 @@ public class BasketDiscountResponse
     public decimal TotalAfterDiscount { get; set; }
     public decimal DiscountAmount { get; set; }
     public bool DiscountApplied { get; set; }
-
-    // Legacy properties for backward compatibility
     public decimal OriginalTotal { get; set; }
     public decimal DiscountedTotal { get; set; }
     public string DiscountDescription { get; set; } = string.Empty;

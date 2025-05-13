@@ -37,7 +37,6 @@ public class ProductService : IProductService
 
     public async Task<ProductDto?> GetProductByIdAsync(int id)
     {
-        // Adjust ID to match database (subtract 1 since external IDs start from 1)
         var dbId = id - 1;
         var product = await _context.Products
             .Include(p => p.Category)
@@ -48,10 +47,8 @@ public class ProductService : IProductService
 
     public async Task<ProductDto> CreateProductAsync(ProductCreateUpdateDto productDto)
     {
-        // Map DTO to entity (this will handle ID adjustments)
         var product = _mapper.Map<Product>(productDto);
         
-        // Check if category exists
         var category = await _context.Categories.FindAsync(product.CategoryId);
         if (category == null)
             throw new InvalidOperationException($"Category with ID {productDto.CategoryId} not found");
@@ -61,7 +58,6 @@ public class ProductService : IProductService
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
 
-            // Load the category for the response
             await _context.Entry(product).Reference(p => p.Category).LoadAsync();
 
             return _mapper.Map<ProductDto>(product);
@@ -74,15 +70,12 @@ public class ProductService : IProductService
 
     public async Task<ProductDto?> UpdateProductAsync(int id, ProductCreateUpdateDto productDto)
     {
-        // Adjust ID to match database (subtract 1)
         var dbId = id - 1;
         var product = await _context.Products.FindAsync(dbId);
         if (product == null) return null;
 
-        // Map DTO to entity (this will handle ID adjustments)
         _mapper.Map(productDto, product);
 
-        // Check if category exists
         var category = await _context.Categories.FindAsync(product.CategoryId);
         if (category == null)
             throw new InvalidOperationException($"Category with ID {productDto.CategoryId} not found");
@@ -91,7 +84,6 @@ public class ProductService : IProductService
         {
             await _context.SaveChangesAsync();
 
-            // Load the category for the response
             await _context.Entry(product).Reference(p => p.Category).LoadAsync();
 
             return _mapper.Map<ProductDto>(product);
@@ -104,7 +96,6 @@ public class ProductService : IProductService
 
     public async Task<bool> DeleteProductAsync(int id)
     {
-        // Adjust ID to match database (subtract 1)
         var dbId = id - 1;
         var product = await _context.Products.FindAsync(dbId);
         if (product == null) return false;
