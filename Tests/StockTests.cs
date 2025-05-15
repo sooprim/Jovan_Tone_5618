@@ -37,7 +37,6 @@ public class StockTests
         context.Categories.RemoveRange(context.Categories);
         await context.SaveChangesAsync();
         
-        // Reset the database state
         context.Database.EnsureDeleted();
         context.Database.EnsureCreated();
     }
@@ -45,7 +44,6 @@ public class StockTests
     [Fact]
     public async Task ImportStockAsync_WithNewProduct_ShouldCreateProductAndCategory()
     {
-        // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
         await ClearDatabase(context);
         
@@ -61,17 +59,14 @@ public class StockTests
             }
         };
 
-        // Act
         var result = await service.ImportStockAsync(stockItems);
 
-        // Assert
         Assert.Single(result);
         Assert.Equal("Intel Core i9-9900K", result[0].Name);
         Assert.Equal(475.99m, result[0].Price);
         Assert.Equal(2, result[0].Quantity);
         Assert.Equal("CPU", result[0].CategoryName);
 
-        // Verify database state
         var dbProduct = await context.Products.Include(p => p.Category).FirstAsync();
         Assert.Equal("Intel Core i9-9900K", dbProduct.Name);
         Assert.Equal("CPU", dbProduct.Category.Name);
@@ -80,7 +75,6 @@ public class StockTests
     [Fact]
     public async Task ImportStockAsync_WithExistingProduct_ShouldUpdateProduct()
     {
-        // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
         await ClearDatabase(context);
 
@@ -109,10 +103,8 @@ public class StockTests
             }
         };
 
-        // Act
         var result = await service.ImportStockAsync(stockItems);
 
-        // Assert
         Assert.Single(result);
         Assert.Equal("Intel Core i9-9900K", result[0].Name);
         Assert.Equal(475.99m, result[0].Price);
@@ -122,7 +114,6 @@ public class StockTests
     [Fact]
     public async Task ImportStockAsync_WithMultipleCategories_ShouldUseFirstCategory()
     {
-        // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
         await ClearDatabase(context);
 
@@ -138,14 +129,11 @@ public class StockTests
             }
         };
 
-        // Act
         var result = await service.ImportStockAsync(stockItems);
 
-        // Assert
         Assert.Single(result);
         Assert.Equal("Keyboard", result[0].CategoryName);
         
-        // Verify all categories were created
         var categories = await context.Categories.Select(c => c.Name).ToListAsync();
         Assert.Contains("Keyboard", categories);
         Assert.Contains("Gaming", categories);
@@ -155,7 +143,6 @@ public class StockTests
     [Fact]
     public async Task ImportStockAsync_WithMultipleProducts_ShouldImportAll()
     {
-        // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
         await ClearDatabase(context);
 
@@ -178,10 +165,8 @@ public class StockTests
             }
         };
 
-        // Act
         var result = await service.ImportStockAsync(stockItems);
 
-        // Assert
         Assert.Equal(2, result.Count);
         Assert.Contains(result, p => p.Name == "Intel Core i9-9900K" && p.CategoryName == "CPU");
         Assert.Contains(result, p => p.Name == "Razer BlackWidow" && p.CategoryName == "Keyboard");

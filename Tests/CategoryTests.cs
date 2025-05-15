@@ -37,7 +37,6 @@ public class CategoryTests
         context.Categories.RemoveRange(context.Categories);
         await context.SaveChangesAsync();
         
-        // Reset the database state
         context.Database.EnsureDeleted();
         context.Database.EnsureCreated();
     }
@@ -45,7 +44,6 @@ public class CategoryTests
     [Fact]
     public async Task GetAllCategoriesAsync_ShouldReturnAllCategories()
     {
-        // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
         await ClearDatabase(context);
 
@@ -68,10 +66,8 @@ public class CategoryTests
 
         var service = new CategoryService(context, _mapper);
 
-        // Act
         var result = await service.GetAllCategoriesAsync();
 
-        // Assert
         Assert.Single(result);
         Assert.Equal("Test Category", result[0].Name);
         Assert.Equal(category.Id, result[0].Id);
@@ -81,7 +77,6 @@ public class CategoryTests
     [Fact]
     public async Task GetCategoryByIdAsync_WithValidId_ShouldReturnCategory()
     {
-        // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
         await ClearDatabase(context);
 
@@ -104,10 +99,8 @@ public class CategoryTests
 
         var service = new CategoryService(context, _mapper);
 
-        // Act
         var result = await service.GetCategoryByIdAsync(category.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal("Test Category", result.Name);
         Assert.Equal(category.Id, result.Id);
@@ -117,21 +110,17 @@ public class CategoryTests
     [Fact]
     public async Task GetCategoryByIdAsync_WithInvalidId_ShouldReturnNull()
     {
-        // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
         var service = new CategoryService(context, _mapper);
 
-        // Act
         var result = await service.GetCategoryByIdAsync(999);
 
-        // Assert
         Assert.Null(result);
     }
 
     [Fact]
     public async Task CreateCategoryAsync_WithValidData_ShouldCreateCategory()
     {
-        // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
         await ClearDatabase(context);
 
@@ -142,16 +131,13 @@ public class CategoryTests
             Description = "New Description"
         };
 
-        // Act
         var result = await service.CreateCategoryAsync(categoryDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal("New Category", result.Name);
         Assert.Equal("New Description", result.Description);
         Assert.True(result.Id > 0);
 
-        // Verify in database
         var dbCategory = await context.Categories.FirstAsync();
         Assert.Equal("New Category", dbCategory.Name);
         Assert.Equal(dbCategory.Id, result.Id);
@@ -160,7 +146,6 @@ public class CategoryTests
     [Fact]
     public async Task UpdateCategoryAsync_WithValidData_ShouldUpdateCategory()
     {
-        // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
         await ClearDatabase(context);
 
@@ -179,16 +164,13 @@ public class CategoryTests
             Description = "Updated Description"
         };
 
-        // Act
         var result = await service.UpdateCategoryAsync(category.Id, updateDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal("Updated Name", result.Name);
         Assert.Equal("Updated Description", result.Description);
         Assert.Equal(category.Id, result.Id);
 
-        // Verify in database
         var dbCategory = await context.Categories.FirstAsync();
         Assert.Equal("Updated Name", dbCategory.Name);
         Assert.Equal(dbCategory.Id, result.Id);
@@ -197,7 +179,6 @@ public class CategoryTests
     [Fact]
     public async Task DeleteCategoryAsync_WithValidId_ShouldDeleteCategory()
     {
-        // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
         await ClearDatabase(context);
 
@@ -211,10 +192,8 @@ public class CategoryTests
 
         var service = new CategoryService(context, _mapper);
 
-        // Act
         var result = await service.DeleteCategoryAsync(category.Id);
 
-        // Assert
         Assert.True(result);
         Assert.Empty(await context.Categories.ToListAsync());
     }
@@ -222,7 +201,6 @@ public class CategoryTests
     [Fact]
     public async Task DeleteCategoryAsync_WithProducts_ShouldThrowException()
     {
-        // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
         await ClearDatabase(context);
 
@@ -244,7 +222,6 @@ public class CategoryTests
 
         var service = new CategoryService(context, _mapper);
 
-        // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
             async () => await service.DeleteCategoryAsync(category.Id));
     }

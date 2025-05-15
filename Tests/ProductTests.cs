@@ -21,7 +21,7 @@ public class ProductTests
             mc.AddProfile(new MappingProfile());
         });
         _mapper = mappingConfig.CreateMapper();
-        _dbName = $"TestDb_Products_{Guid.NewGuid()}"; // Unique database for each test run
+        _dbName = $"TestDb_Products_{Guid.NewGuid()}";
     }
 
     private DbContextOptions<ApplicationDbContext> GetDbContextOptions()
@@ -37,7 +37,6 @@ public class ProductTests
         context.Categories.RemoveRange(context.Categories);
         await context.SaveChangesAsync();
         
-        // Reset the database state
         context.Database.EnsureDeleted();
         context.Database.EnsureCreated();
     }
@@ -45,7 +44,6 @@ public class ProductTests
     [Fact]
     public async Task GetAllProductsAsync_ShouldReturnAllProducts()
     {
-        // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
         await ClearDatabase(context);
 
@@ -66,10 +64,8 @@ public class ProductTests
 
         var service = new ProductService(context, _mapper);
 
-        // Act
         var result = await service.GetAllProductsAsync();
 
-        // Assert
         Assert.Single(result);
         Assert.Equal("Test Product", result[0].Name);
         Assert.Equal("Test Category", result[0].CategoryName);
@@ -80,7 +76,6 @@ public class ProductTests
     [Fact]
     public async Task GetProductByIdAsync_WithValidId_ShouldReturnProduct()
     {
-        // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
         await ClearDatabase(context);
 
@@ -101,10 +96,8 @@ public class ProductTests
 
         var service = new ProductService(context, _mapper);
 
-        // Act
         var result = await service.GetProductByIdAsync(product.Id);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal("Test Product", result.Name);
         Assert.Equal(9.99m, result.Price);
@@ -126,7 +119,6 @@ public class ProductTests
     [Fact]
     public async Task CreateProductAsync_WithValidData_ShouldCreateProduct()
     {
-        // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
         await ClearDatabase(context);
 
@@ -144,17 +136,14 @@ public class ProductTests
             CategoryId = category.Id
         };
 
-        // Act
         var result = await service.CreateProductAsync(productDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal("New Product", result.Name);
         Assert.Equal(19.99m, result.Price);
         Assert.Equal(5, result.Quantity);
         Assert.Equal(category.Id, result.CategoryId);
 
-        // Verify in database
         var dbProduct = await context.Products.Include(p => p.Category).FirstAsync();
         Assert.Equal("New Product", dbProduct.Name);
         Assert.Equal(category.Id, dbProduct.CategoryId);
@@ -163,7 +152,6 @@ public class ProductTests
     [Fact]
     public async Task UpdateProductAsync_WithValidData_ShouldUpdateProduct()
     {
-        // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
         await ClearDatabase(context);
 
@@ -192,10 +180,8 @@ public class ProductTests
             CategoryId = category.Id
         };
 
-        // Act
         var result = await service.UpdateProductAsync(product.Id, updateDto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal("Updated Name", result.Name);
         Assert.Equal(29.99m, result.Price);
@@ -203,7 +189,6 @@ public class ProductTests
         Assert.Equal(product.Id, result.Id);
         Assert.Equal(category.Id, result.CategoryId);
 
-        // Verify in database
         var dbProduct = await context.Products.Include(p => p.Category).FirstAsync();
         Assert.Equal("Updated Name", dbProduct.Name);
         Assert.Equal(category.Id, dbProduct.CategoryId);
@@ -212,7 +197,6 @@ public class ProductTests
     [Fact]
     public async Task DeleteProductAsync_WithValidId_ShouldDeleteProduct()
     {
-        // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
         await ClearDatabase(context);
 
@@ -233,10 +217,8 @@ public class ProductTests
 
         var service = new ProductService(context, _mapper);
 
-        // Act
         var result = await service.DeleteProductAsync(product.Id);
 
-        // Assert
         Assert.True(result);
         Assert.Empty(await context.Products.ToListAsync());
     }

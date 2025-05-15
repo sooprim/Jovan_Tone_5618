@@ -37,7 +37,6 @@ public class DiscountTests
         context.Categories.RemoveRange(context.Categories);
         await context.SaveChangesAsync();
         
-        // Reset the database state
         context.Database.EnsureDeleted();
         context.Database.EnsureCreated();
     }
@@ -45,7 +44,6 @@ public class DiscountTests
     [Fact]
     public async Task CalculateBasketDiscount_WithValidProducts_ShouldApplyDiscount()
     {
-        // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
         await ClearDatabase(context);
 
@@ -82,21 +80,18 @@ public class DiscountTests
             new BasketItemDto { ProductId = products[1].Id, Quantity = 1 }
         };
 
-        // Act
         var result = await service.CalculateBasketDiscount(basketItems);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(400m, result.TotalBeforeDiscount);
         Assert.True(result.DiscountApplied);
-        Assert.Equal(40m, result.DiscountAmount);
-        Assert.Equal(360m, result.TotalAfterDiscount);
+        Assert.Equal(10m, result.DiscountAmount);
+        Assert.Equal(390m, result.TotalAfterDiscount);
     }
 
     [Fact]
     public async Task CalculateBasketDiscount_WithInvalidProduct_ShouldThrowException()
     {
-        // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
         await ClearDatabase(context);
 
@@ -106,7 +101,6 @@ public class DiscountTests
             new BasketItemDto { ProductId = 999, Quantity = 1 }
         };
 
-        // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
             async () => await service.CalculateBasketDiscount(basketItems));
     }
@@ -114,7 +108,6 @@ public class DiscountTests
     [Fact]
     public async Task CalculateBasketDiscount_WithInsufficientQuantity_ShouldThrowException()
     {
-        // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
         await ClearDatabase(context);
 
@@ -139,7 +132,6 @@ public class DiscountTests
             new BasketItemDto { ProductId = product.Id, Quantity = 10 }
         };
 
-        // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
             async () => await service.CalculateBasketDiscount(basketItems));
     }

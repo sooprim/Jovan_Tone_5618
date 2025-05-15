@@ -25,7 +25,7 @@ public class DiscountService : IDiscountService
         decimal totalDiscount = 0;
 
         // Group items by category to check for multiple items in same category
-        var productsByCategory = new Dictionary<int, List<(decimal Price, int Quantity)>>();
+        var productsByCategory = new Dictionary<int, List<(Product Product, int Quantity)>>();
         
         // First pass: Validate products and collect category information
         foreach (var item in basketItems)
@@ -43,28 +43,34 @@ public class DiscountService : IDiscountService
 
             // Add to category group
             if (!productsByCategory.ContainsKey(product.CategoryId))
-                productsByCategory[product.CategoryId] = new List<(decimal Price, int Quantity)>();
+                productsByCategory[product.CategoryId] = new List<(Product Product, int Quantity)>();
             
-            productsByCategory[product.CategoryId].Add((product.Price, item.Quantity));
+            productsByCategory[product.CategoryId].Add((product, item.Quantity));
             
             // Add to total before discount
             totalBeforeDiscount += product.Price * item.Quantity;
         }
 
+        Console.WriteLine($"Total before discount: {totalBeforeDiscount}");
+
         // Second pass: Calculate discounts
         foreach (var categoryGroup in productsByCategory)
         {
             var productsInCategory = categoryGroup.Value;
+            Console.WriteLine($"Category {productsInCategory[0].Product.Category.Name} has {productsInCategory.Count} products");
             
             // If there's more than one product in this category
             if (productsInCategory.Count > 1)
             {
-                // Apply discount only to the first product
                 var firstProduct = productsInCategory[0];
-                decimal discountAmount = firstProduct.Price * firstProduct.Quantity * CATEGORY_DISCOUNT_RATE;
+                decimal firstProductTotal = firstProduct.Product.Price * firstProduct.Quantity;
+                decimal discountAmount = firstProductTotal * CATEGORY_DISCOUNT_RATE;
+                Console.WriteLine($"First product total: {firstProductTotal}, Discount amount: {discountAmount}");
                 totalDiscount += discountAmount;
             }
         }
+
+        Console.WriteLine($"Total discount: {totalDiscount}");
 
         decimal totalAfterDiscount = totalBeforeDiscount - totalDiscount;
         bool discountApplied = totalDiscount > 0;
