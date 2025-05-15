@@ -29,10 +29,9 @@ public class CategoryService : ICategoryService
 
     public async Task<CategoryDto?> GetCategoryByIdAsync(int id)
     {
-        var dbId = id - 1;
         var category = await _context.Categories
             .Include(c => c.Products)
-            .FirstOrDefaultAsync(c => c.Id == dbId);
+            .FirstOrDefaultAsync(c => c.Id == id);
         
         return category == null ? null : _mapper.Map<CategoryDto>(category);
     }
@@ -53,8 +52,7 @@ public class CategoryService : ICategoryService
 
     public async Task<CategoryDto?> UpdateCategoryAsync(int id, UpdateCategoryDto categoryDto)
     {
-        var dbId = id - 1;
-        var category = await _context.Categories.FindAsync(dbId);
+        var category = await _context.Categories.FindAsync(id);
         if (category == null) return null;
 
         category.Name = categoryDto.Name;
@@ -67,10 +65,9 @@ public class CategoryService : ICategoryService
 
     public async Task<bool> DeleteCategoryAsync(int id)
     {
-        var dbId = id - 1;
         var category = await _context.Categories
             .Include(c => c.Products)
-            .FirstOrDefaultAsync(c => c.Id == dbId);
+            .FirstOrDefaultAsync(c => c.Id == id);
 
         if (category == null) return false;
         if (category.Products.Any())

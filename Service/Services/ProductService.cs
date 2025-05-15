@@ -37,10 +37,9 @@ public class ProductService : IProductService
 
     public async Task<ProductDto?> GetProductByIdAsync(int id)
     {
-        var dbId = id - 1;
         var product = await _context.Products
             .Include(p => p.Category)
-            .FirstOrDefaultAsync(p => p.Id == dbId);
+            .FirstOrDefaultAsync(p => p.Id == id);
         
         return product == null ? null : _mapper.Map<ProductDto>(product);
     }
@@ -70,8 +69,7 @@ public class ProductService : IProductService
 
     public async Task<ProductDto?> UpdateProductAsync(int id, ProductCreateUpdateDto productDto)
     {
-        var dbId = id - 1;
-        var product = await _context.Products.FindAsync(dbId);
+        var product = await _context.Products.FindAsync(id);
         if (product == null) return null;
 
         _mapper.Map(productDto, product);
@@ -96,8 +94,7 @@ public class ProductService : IProductService
 
     public async Task<bool> DeleteProductAsync(int id)
     {
-        var dbId = id - 1;
-        var product = await _context.Products.FindAsync(dbId);
+        var product = await _context.Products.FindAsync(id);
         if (product == null) return false;
 
         try
