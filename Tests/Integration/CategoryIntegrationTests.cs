@@ -19,7 +19,6 @@ public class CategoryIntegrationTests : TestBase
     {
         await ClearDatabase();
 
-        // Create category
         var createDto = new CreateCategoryDto
         {
             Name = "Test Category",
@@ -30,7 +29,6 @@ public class CategoryIntegrationTests : TestBase
         Assert.NotNull(created);
         Assert.Equal(createDto.Name, created.Name);
 
-        // Get category
         var retrieved = await _service.GetCategoryByIdAsync(created.Id);
         Assert.NotNull(retrieved);
         Assert.Equal(created.Id, retrieved.Id);
@@ -42,12 +40,10 @@ public class CategoryIntegrationTests : TestBase
     {
         await ClearDatabase();
 
-        // Create category
         var category = new Category { Name = "Test Category" };
         await Context.Categories.AddAsync(category);
         await Context.SaveChangesAsync();
 
-        // Add product to category
         var product = new Product
         {
             Name = "Test Product",
@@ -56,7 +52,6 @@ public class CategoryIntegrationTests : TestBase
         await Context.Products.AddAsync(product);
         await Context.SaveChangesAsync();
 
-        // Attempt to delete category
         await Assert.ThrowsAsync<InvalidOperationException>(
             async () => await _service.DeleteCategoryAsync(category.Id));
     }
