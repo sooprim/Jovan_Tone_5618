@@ -11,6 +11,7 @@ public class DiscountService : IDiscountService
 {
     private readonly ApplicationDbContext _context;
     private readonly IMapper _mapper;
+    private const decimal CATEGORY_DISCOUNT_RATE = 0.05m; // 5% discount
 
     public DiscountService(ApplicationDbContext context, IMapper mapper)
     {
@@ -21,7 +22,12 @@ public class DiscountService : IDiscountService
     public async Task<BasketDiscountResponse> CalculateBasketDiscount(List<BasketItemDto> basketItems)
     {
         decimal totalBeforeDiscount = 0;
+        decimal totalDiscount = 0;
 
+        // Group items by category to check for multiple items in same category
+        var productsByCategory = new Dictionary<int, List<(decimal Price, int Quantity)>>();
+        
+        // First pass: Validate products and collect category information
         foreach (var item in basketItems)
         {
             var product = await _context.Products
@@ -32,33 +38,54 @@ public class DiscountService : IDiscountService
                 throw new InvalidOperationException($"Product with ID {item.ProductId} not found");
             
             if (product.Quantity < item.Quantity)
-                throw new InvalidOperationException($"Not enough stock for product '{product.Name}'. Available: {product.Quantity}, Requested: {item.Quantity}");
+                throw new InvalidOperationException(
+                    $"Not enough stock for product '{product.Name}'. Available: {product.Quantity}, Requested: {item.Quantity}");
 
+            // Add to category group
+            if (!productsByCategory.ContainsKey(product.CategoryId))
+                productsByCategory[product.CategoryId] = new List<(decimal Price, int Quantity)>();
+            
+            productsByCategory[product.CategoryId].Add((product.Price, item.Quantity));
+            
+            // Add to total before discount
             totalBeforeDiscount += product.Price * item.Quantity;
         }
 
-        decimal discountAmount = totalBeforeDiscount * 0.10m;
-        decimal totalAfterDiscount = totalBeforeDiscount - discountAmount;
+        // Second pass: Calculate discounts
+        foreach (var categoryGroup in productsByCategory)
+        {
+            var productsInCategory = categoryGroup.Value;
+            
+            // If there's more than one product in this category
+            if (productsInCategory.Count > 1)
+            {
+                // Apply discount only to the first product
+                var firstProduct = productsInCategory[0];
+                decimal discountAmount = firstProduct.Price * firstProduct.Quantity * CATEGORY_DISCOUNT_RATE;
+                totalDiscount += discountAmount;
+            }
+        }
+
+        decimal totalAfterDiscount = totalBeforeDiscount - totalDiscount;
+        bool discountApplied = totalDiscount > 0;
 
         return new BasketDiscountResponse
         {
             TotalBeforeDiscount = totalBeforeDiscount,
             TotalAfterDiscount = totalAfterDiscount,
-            DiscountAmount = discountAmount,
-            DiscountApplied = true
+            DiscountAmount = totalDiscount,
+            DiscountApplied = discountApplied,
+            OriginalTotal = totalBeforeDiscount,
+            DiscountedTotal = totalAfterDiscount,
+            DiscountDescription = discountApplied 
+                ? "5% discount applied to first product in categories with multiple items" 
+                : "No discount applied"
         };
     }
 
     public async Task<BasketDiscountResponse> CalculateDiscountAsync(List<BasketItemDto> basketItems)
     {
-        var result = await CalculateBasketDiscount(basketItems);
-        return new BasketDiscountResponse
-        {
-            OriginalTotal = result.TotalBeforeDiscount,
-            DiscountedTotal = result.TotalAfterDiscount,
-            DiscountAmount = result.DiscountAmount,
-            DiscountDescription = result.DiscountApplied ? "10% discount applied" : "No discount applied"
-        };
+        return await CalculateBasketDiscount(basketItems);
     }
 
     private async Task<Dictionary<int, string>> GetProductCategories(List<int> productIds)
