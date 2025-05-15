@@ -12,7 +12,7 @@ namespace Tests;
 public class StockTests
 {
     private readonly IMapper _mapper;
-    private readonly DbContextOptions<ApplicationDbContext> _options;
+    private readonly string _dbName;
 
     public StockTests()
     {
@@ -21,17 +21,34 @@ public class StockTests
             mc.AddProfile(new MappingProfile());
         });
         _mapper = mappingConfig.CreateMapper();
+        _dbName = $"TestDb_Stock_{Guid.NewGuid()}";
+    }
 
-        _options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: "TestDb_Stock")
+    private DbContextOptions<ApplicationDbContext> GetDbContextOptions()
+    {
+        return new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(databaseName: _dbName)
             .Options;
+    }
+
+    private async Task ClearDatabase(ApplicationDbContext context)
+    {
+        context.Products.RemoveRange(context.Products);
+        context.Categories.RemoveRange(context.Categories);
+        await context.SaveChangesAsync();
+        
+        // Reset the database state
+        context.Database.EnsureDeleted();
+        context.Database.EnsureCreated();
     }
 
     [Fact]
     public async Task ImportStockAsync_WithNewProduct_ShouldCreateProductAndCategory()
     {
         // Arrange
-        using var context = new ApplicationDbContext(_options);
+        using var context = new ApplicationDbContext(GetDbContextOptions());
+        await ClearDatabase(context);
+        
         var service = new StockService(context, _mapper);
         var stockItems = new List<StockImportDto>
         {
@@ -64,7 +81,9 @@ public class StockTests
     public async Task ImportStockAsync_WithExistingProduct_ShouldUpdateProduct()
     {
         // Arrange
-        using var context = new ApplicationDbContext(_options);
+        using var context = new ApplicationDbContext(GetDbContextOptions());
+        await ClearDatabase(context);
+
         var category = new Category { Name = "CPU" };
         var product = new Product
         {
@@ -96,15 +115,17 @@ public class StockTests
         // Assert
         Assert.Single(result);
         Assert.Equal("Intel Core i9-9900K", result[0].Name);
-        Assert.Equal(475.99m, result[0].Price); // Updated price
-        Assert.Equal(2, result[0].Quantity); // Updated quantity
+        Assert.Equal(475.99m, result[0].Price);
+        Assert.Equal(2, result[0].Quantity);
     }
 
     [Fact]
     public async Task ImportStockAsync_WithMultipleCategories_ShouldUseFirstCategory()
     {
         // Arrange
-        using var context = new ApplicationDbContext(_options);
+        using var context = new ApplicationDbContext(GetDbContextOptions());
+        await ClearDatabase(context);
+
         var service = new StockService(context, _mapper);
         var stockItems = new List<StockImportDto>
         {
@@ -122,7 +143,7 @@ public class StockTests
 
         // Assert
         Assert.Single(result);
-        Assert.Equal("Keyboard", result[0].CategoryName); // Should use first category
+        Assert.Equal("Keyboard", result[0].CategoryName);
         
         // Verify all categories were created
         var categories = await context.Categories.Select(c => c.Name).ToListAsync();
@@ -135,7 +156,9 @@ public class StockTests
     public async Task ImportStockAsync_WithMultipleProducts_ShouldImportAll()
     {
         // Arrange
-        using var context = new ApplicationDbContext(_options);
+        using var context = new ApplicationDbContext(GetDbContextOptions());
+        await ClearDatabase(context);
+
         var service = new StockService(context, _mapper);
         var stockItems = new List<StockImportDto>
         {

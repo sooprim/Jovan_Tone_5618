@@ -21,7 +21,7 @@ public class DiscountTests
             mc.AddProfile(new MappingProfile());
         });
         _mapper = mappingConfig.CreateMapper();
-        _dbName = $"TestDb_Discounts_{Guid.NewGuid()}"; // Unique database for each test run
+        _dbName = $"TestDb_Discounts_{Guid.NewGuid()}";
     }
 
     private DbContextOptions<ApplicationDbContext> GetDbContextOptions()
@@ -36,6 +36,10 @@ public class DiscountTests
         context.Products.RemoveRange(context.Products);
         context.Categories.RemoveRange(context.Categories);
         await context.SaveChangesAsync();
+        
+        // Reset the database state
+        context.Database.EnsureDeleted();
+        context.Database.EnsureCreated();
     }
 
     [Fact]
@@ -74,8 +78,8 @@ public class DiscountTests
         var service = new DiscountService(context, _mapper);
         var basketItems = new List<BasketItemDto>
         {
-            new BasketItemDto { ProductId = products[0].Id + 1, Quantity = 2 }, // External ID is internal ID + 1
-            new BasketItemDto { ProductId = products[1].Id + 1, Quantity = 1 }  // External ID is internal ID + 1
+            new BasketItemDto { ProductId = products[0].Id, Quantity = 2 },
+            new BasketItemDto { ProductId = products[1].Id, Quantity = 1 }
         };
 
         // Act
@@ -83,9 +87,9 @@ public class DiscountTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(400m, result.TotalBeforeDiscount); // (100 * 2) + (200 * 1)
+        Assert.Equal(400m, result.TotalBeforeDiscount);
         Assert.True(result.DiscountApplied);
-        Assert.Equal(40m, result.DiscountAmount); // 10% of 400
+        Assert.Equal(40m, result.DiscountAmount);
         Assert.Equal(360m, result.TotalAfterDiscount);
     }
 
@@ -94,6 +98,8 @@ public class DiscountTests
     {
         // Arrange
         using var context = new ApplicationDbContext(GetDbContextOptions());
+        await ClearDatabase(context);
+
         var service = new DiscountService(context, _mapper);
         var basketItems = new List<BasketItemDto>
         {
@@ -130,7 +136,7 @@ public class DiscountTests
         var service = new DiscountService(context, _mapper);
         var basketItems = new List<BasketItemDto>
         {
-            new BasketItemDto { ProductId = product.Id + 1, Quantity = 10 } // External ID is internal ID + 1
+            new BasketItemDto { ProductId = product.Id, Quantity = 10 }
         };
 
         // Act & Assert

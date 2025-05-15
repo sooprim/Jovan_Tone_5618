@@ -24,10 +24,9 @@ public class DiscountService : IDiscountService
 
         foreach (var item in basketItems)
         {
-            var dbProductId = item.ProductId - 1;
             var product = await _context.Products
                 .Include(p => p.Category)
-                .FirstOrDefaultAsync(p => p.Id == dbProductId);
+                .FirstOrDefaultAsync(p => p.Id == item.ProductId);
 
             if (product == null)
                 throw new InvalidOperationException($"Product with ID {item.ProductId} not found");
@@ -64,12 +63,11 @@ public class DiscountService : IDiscountService
 
     private async Task<Dictionary<int, string>> GetProductCategories(List<int> productIds)
     {
-        var dbProductIds = productIds.Select(id => id - 1).ToList();
         var products = await _context.Products
             .Include(p => p.Category)
-            .Where(p => dbProductIds.Contains(p.Id))
+            .Where(p => productIds.Contains(p.Id))
             .ToDictionaryAsync(
-                p => p.Id + 1,
+                p => p.Id,
                 p => p.Category.Name
             );
         return products;

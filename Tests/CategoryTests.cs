@@ -33,9 +33,13 @@ public class CategoryTests
 
     private async Task ClearDatabase(ApplicationDbContext context)
     {
-        context.Categories.RemoveRange(context.Categories);
         context.Products.RemoveRange(context.Products);
+        context.Categories.RemoveRange(context.Categories);
         await context.SaveChangesAsync();
+        
+        // Reset the database state
+        context.Database.EnsureDeleted();
+        context.Database.EnsureCreated();
     }
 
     [Fact]
@@ -70,7 +74,7 @@ public class CategoryTests
         // Assert
         Assert.Single(result);
         Assert.Equal("Test Category", result[0].Name);
-        Assert.Equal(category.Id + 1, result[0].Id); // External ID should be internal ID + 1
+        Assert.Equal(category.Id, result[0].Id);
         Assert.Equal(5, result[0].Quantity);
     }
 
@@ -101,12 +105,12 @@ public class CategoryTests
         var service = new CategoryService(context, _mapper);
 
         // Act
-        var result = await service.GetCategoryByIdAsync(category.Id + 1); // External ID is internal ID + 1
+        var result = await service.GetCategoryByIdAsync(category.Id);
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal("Test Category", result.Name);
-        Assert.Equal(category.Id + 1, result.Id);
+        Assert.Equal(category.Id, result.Id);
         Assert.Equal(5, result.Quantity);
     }
 
@@ -150,7 +154,7 @@ public class CategoryTests
         // Verify in database
         var dbCategory = await context.Categories.FirstAsync();
         Assert.Equal("New Category", dbCategory.Name);
-        Assert.Equal(dbCategory.Id + 1, result.Id);
+        Assert.Equal(dbCategory.Id, result.Id);
     }
 
     [Fact]
@@ -176,18 +180,18 @@ public class CategoryTests
         };
 
         // Act
-        var result = await service.UpdateCategoryAsync(category.Id + 1, updateDto); // External ID is internal ID + 1
+        var result = await service.UpdateCategoryAsync(category.Id, updateDto);
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal("Updated Name", result.Name);
         Assert.Equal("Updated Description", result.Description);
-        Assert.Equal(category.Id + 1, result.Id);
+        Assert.Equal(category.Id, result.Id);
 
         // Verify in database
         var dbCategory = await context.Categories.FirstAsync();
         Assert.Equal("Updated Name", dbCategory.Name);
-        Assert.Equal(dbCategory.Id + 1, result.Id);
+        Assert.Equal(dbCategory.Id, result.Id);
     }
 
     [Fact]
@@ -208,7 +212,7 @@ public class CategoryTests
         var service = new CategoryService(context, _mapper);
 
         // Act
-        var result = await service.DeleteCategoryAsync(category.Id + 1); // External ID is internal ID + 1
+        var result = await service.DeleteCategoryAsync(category.Id);
 
         // Assert
         Assert.True(result);
@@ -242,6 +246,6 @@ public class CategoryTests
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            async () => await service.DeleteCategoryAsync(category.Id + 1)); // External ID is internal ID + 1
+            async () => await service.DeleteCategoryAsync(category.Id));
     }
 } 

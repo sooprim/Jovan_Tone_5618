@@ -9,24 +9,17 @@ public class MappingProfile : Profile
     public MappingProfile()
     {
         CreateMap<Product, ProductDto>()
-            .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
-            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id + 1))
-            .ForMember(dest => dest.CategoryId, opt => opt.MapFrom(src => src.CategoryId + 1));
+            .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name));
         
-        CreateMap<ProductDto, Product>()
-            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id - 1))
-            .ForMember(dest => dest.CategoryId, opt => opt.MapFrom(src => src.CategoryId - 1));
+        CreateMap<ProductDto, Product>();
         
         CreateMap<Product, ProductCreateUpdateDto>();
-        CreateMap<ProductCreateUpdateDto, Product>()
-            .ForMember(dest => dest.CategoryId, opt => opt.MapFrom(src => src.CategoryId - 1));
+        CreateMap<ProductCreateUpdateDto, Product>();
 
         CreateMap<Category, CategoryDto>()
-            .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Products.Sum(p => p.Quantity)))
-            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id + 1));
+            .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Products.Sum(p => p.Quantity)));
         
-        CreateMap<CategoryDto, Category>()
-            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id - 1));
+        CreateMap<CategoryDto, Category>();
         
         CreateMap<CreateCategoryDto, Category>();
         CreateMap<UpdateCategoryDto, Category>();
@@ -36,7 +29,7 @@ public class MappingProfile : Profile
                 src.Categories.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList()));
 
         CreateMap<Product, StockDto>()
-            .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.Id + 1))
+            .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.Id))
             .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Name))
             .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name));
     }

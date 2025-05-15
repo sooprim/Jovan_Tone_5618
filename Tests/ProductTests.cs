@@ -2,7 +2,6 @@ using AutoMapper;
 using Data.Context;
 using Data.Entities;
 using Microsoft.EntityFrameworkCore;
-using Moq;
 using Service.DTOs;
 using Service.Mapping;
 using Service.Services;
@@ -37,6 +36,10 @@ public class ProductTests
         context.Products.RemoveRange(context.Products);
         context.Categories.RemoveRange(context.Categories);
         await context.SaveChangesAsync();
+        
+        // Reset the database state
+        context.Database.EnsureDeleted();
+        context.Database.EnsureCreated();
     }
 
     [Fact]
@@ -70,8 +73,8 @@ public class ProductTests
         Assert.Single(result);
         Assert.Equal("Test Product", result[0].Name);
         Assert.Equal("Test Category", result[0].CategoryName);
-        Assert.Equal(product.Id + 1, result[0].Id); // External ID should be internal ID + 1
-        Assert.Equal(category.Id + 1, result[0].CategoryId); // External CategoryId should be internal ID + 1
+        Assert.Equal(product.Id, result[0].Id);
+        Assert.Equal(category.Id, result[0].CategoryId);
     }
 
     [Fact]
@@ -99,14 +102,14 @@ public class ProductTests
         var service = new ProductService(context, _mapper);
 
         // Act
-        var result = await service.GetProductByIdAsync(product.Id + 1); // External ID is internal ID + 1
+        var result = await service.GetProductByIdAsync(product.Id);
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal("Test Product", result.Name);
         Assert.Equal(9.99m, result.Price);
-        Assert.Equal(product.Id + 1, result.Id);
-        Assert.Equal(category.Id + 1, result.CategoryId);
+        Assert.Equal(product.Id, result.Id);
+        Assert.Equal(category.Id, result.CategoryId);
     }
 
     [Fact]
@@ -138,7 +141,7 @@ public class ProductTests
             Description = "New Description",
             Price = 19.99m,
             Quantity = 5,
-            CategoryId = category.Id + 1 // External ID is internal ID + 1
+            CategoryId = category.Id
         };
 
         // Act
@@ -149,7 +152,7 @@ public class ProductTests
         Assert.Equal("New Product", result.Name);
         Assert.Equal(19.99m, result.Price);
         Assert.Equal(5, result.Quantity);
-        Assert.Equal(category.Id + 1, result.CategoryId);
+        Assert.Equal(category.Id, result.CategoryId);
 
         // Verify in database
         var dbProduct = await context.Products.Include(p => p.Category).FirstAsync();
@@ -186,19 +189,19 @@ public class ProductTests
             Description = "Updated Description",
             Price = 29.99m,
             Quantity = 15,
-            CategoryId = category.Id + 1 // External ID is internal ID + 1
+            CategoryId = category.Id
         };
 
         // Act
-        var result = await service.UpdateProductAsync(product.Id + 1, updateDto); // External ID is internal ID + 1
+        var result = await service.UpdateProductAsync(product.Id, updateDto);
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal("Updated Name", result.Name);
         Assert.Equal(29.99m, result.Price);
         Assert.Equal(15, result.Quantity);
-        Assert.Equal(product.Id + 1, result.Id);
-        Assert.Equal(category.Id + 1, result.CategoryId);
+        Assert.Equal(product.Id, result.Id);
+        Assert.Equal(category.Id, result.CategoryId);
 
         // Verify in database
         var dbProduct = await context.Products.Include(p => p.Category).FirstAsync();
@@ -231,7 +234,7 @@ public class ProductTests
         var service = new ProductService(context, _mapper);
 
         // Act
-        var result = await service.DeleteProductAsync(product.Id + 1); // External ID is internal ID + 1
+        var result = await service.DeleteProductAsync(product.Id);
 
         // Assert
         Assert.True(result);
